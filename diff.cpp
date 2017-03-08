@@ -7,7 +7,7 @@ using namespace std;
 
 int main()
 {
-	Mat frame, prevFrame, frameHSV,prevFrameHSV, diff, diff2 ;
+	Mat frame, prevFrame, frameYUV,prevFrameYUV, diff, diffThreshold ;
 	VideoCapture cap("vehicalVideo.mp4");
 	if(!cap.isOpened())
 	{
@@ -15,11 +15,28 @@ int main()
 		return -1;
 	}
 
-	namedWindow("Window1", CV_WINDOW_NORMAL);	
-	namedWindow("Window2", CV_WINDOW_NORMAL);	
+	namedWindow("Window absDiffenrce", CV_WINDOW_AUTOSIZE);	
+	namedWindow("Window Original", CV_WINDOW_AUTOSIZE);	
+
+	int threshValue = 0;	
+	createTrackbar("Threshold Trackbar", "Window absDiffenrce", &threshValue, 255);
 	
 	cap.read(prevFrame);
-	cvtColor(prevFrame, prevFrameHSV, CV_BGR2HSV);
+	cvtColor(prevFrame, prevFrameYUV, CV_BGR2YUV);
+	
+	double dWidth = cap.get(CV_CAP_PROP_FRAME_WIDTH);
+	double dHeight = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
+	cout<<"Widht: "<<dWidth<<" Height: "<<dHeight<<endl;	
+
+	//cout<<"YUV: "<<(int)prevFrameYUV.channels();
+	for(int i=500;i<510;i++){
+		for(int j=500;j<510;j++){
+			cout<< (int)prevFrameYUV.at<Vec3b>(Point(i,j))[0]<<" ";
+		}
+		cout<<endl;
+	}
+
+
 	while(waitKey(20)!=27)
 	{
 		if(!cap.read(frame))
@@ -28,13 +45,23 @@ int main()
 			break;
 		}
 		
-		cvtColor(frame, frameHSV, CV_BGR2HSV);
-		absdiff(frame, prevFrame, diff);
-		imshow("Window1", diff);
+		cvtColor(frame, frameYUV, CV_BGR2YUV);
+		absdiff(frameYUV, prevFrameYUV, diff);
+		threshold(diff, diffThreshold, threshValue, 255, 3);
 
-		diff2 = frame - prevFrame;
-		imshow("Window2", diff2);
-		prevFrame = frame.clone();
+		/*for(int y=0;y<100;y++)
+		{
+			for(int x=0;x<100;x++)
+			{
+				Vec3b color = diffThreshold.at<Vec3b>(Point(x,y));
+				color[0] =255;
+				diffThreshold.at<Vec3b>(Point(x,y)) = color;
+			}
+		}*/
+
+		imshow("Window absDiffenrce", diffThreshold);
+		imshow("Window Original", frame);
+		prevFrameYUV = frameYUV.clone();
 			
 	}
 
